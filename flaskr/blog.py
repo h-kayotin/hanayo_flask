@@ -12,6 +12,7 @@ from werkzeug.exceptions import abort
 
 from flaskr.auth import login_required
 from flaskr.db import get_db
+import datetime
 
 bp = Blueprint('blog', __name__)
 
@@ -19,23 +20,18 @@ bp = Blueprint('blog', __name__)
 @bp.route('/')
 @login_required  # 该装饰器表示该页面需要登录，否则就转到登录页
 def index():
+    admins = {1, 2, 3}
     db = get_db()
     current_userid = session['user_id']
     # 如果登录的不是管理员，那么就只显示登录用户提交的工单
-    if not current_userid == 1:
-        posts = db.execute(
-            'SELECT p.id, title, body, created, author_id, username'
-            ' FROM post p JOIN user u ON p.author_id = u.id'
-            f' where p.author_id = {current_userid}'
-            ' ORDER BY created DESC'
-        ).fetchall()
-    else:
-        # 管理员可以看到所有的工单
-        posts = db.execute(
-            'SELECT p.id, title, body, created, author_id, username'
-            ' FROM post p JOIN user u ON p.author_id = u.id'
-            ' ORDER BY created DESC'
-        ).fetchall()
+    sql_txt = """
+        SELECT p.id, title, body, created, author_id, username, category, status
+        FROM post p JOIN user u ON p.author_id = u.id
+    """
+    if current_userid not in admins:
+        sql_txt += f' WHERE p.author_id = {current_userid}'
+    sql_txt += ' ORDER BY created DESC'
+    posts = db.execute(sql_txt).fetchall()
     return render_template('blog/index.html', posts=posts)
 
 
@@ -45,19 +41,22 @@ def create():
     if request.method == 'POST':
         title = request.form['title']
         body = request.form['body']
+        category = request.form.get('category')
+        status = "新提交"
+        created = datetime.datetime.now()
         error = None
 
         if not title:
-            error = 'Title is required.'
+            error = '请填写标题'
 
         if error is not None:
             flash(error)
         else:
             db = get_db()
             db.execute(
-                'INSERT INTO post (title, body, author_id)'
-                ' VALUES (?, ?, ?)',
-                (title, body, g.user['id'])
+                'INSERT INTO post (title, body, author_id, category, status, created)'
+                ' VALUES (?, ?, ?, ?, ?, ?)',
+                (title, body, g.user['id'], category, status, created)
             )
             db.commit()
             return redirect(url_for('blog.index'))

@@ -13,5 +13,10 @@ CREATE TABLE post (
   created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   title TEXT NOT NULL,
   body TEXT NOT NULL,
+  type TEXT NOT NULL,
+  status TEXT NOT NULL,
+  solution TEXT,
+  owner TEXT NOT NULL,
+  done TIMESTAMP,
   FOREIGN KEY (author_id) REFERENCES user (id)
 );

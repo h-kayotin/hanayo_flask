@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}Log In{% endblock %}</h1>
+  <h1>{% block title %}请登录后继续操作：{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
   <form method="post">
-    <label for="username">Username</label>
+    <label for="username">用户名</label>
     <input name="username" id="username" required>
-    <label for="password">Password</label>
+    <label for="password">密码</label>
     <input type="password" name="password" id="password" required>
-    <input type="submit" value="Log In">
+    <input type="submit" value="登录">
   </form>
 {% endblock %}

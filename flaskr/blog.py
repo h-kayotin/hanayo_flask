@@ -6,7 +6,7 @@ Date： 2023/7/28
 """
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, flash, g, redirect, render_template, request, url_for, session
 )
 from werkzeug.exceptions import abort
 
@@ -17,13 +17,25 @@ bp = Blueprint('blog', __name__)
 
 
 @bp.route('/')
+@login_required  # 该装饰器表示该页面需要登录，否则就转到登录页
 def index():
     db = get_db()
-    posts = db.execute(
-        'SELECT p.id, title, body, created, author_id, username'
-        ' FROM post p JOIN user u ON p.author_id = u.id'
-        ' ORDER BY created DESC'
-    ).fetchall()
+    current_userid = session['user_id']
+    # 如果登录的不是管理员，那么就只显示登录用户提交的工单
+    if not current_userid == 1:
+        posts = db.execute(
+            'SELECT p.id, title, body, created, author_id, username'
+            ' FROM post p JOIN user u ON p.author_id = u.id'
+            f' where p.author_id = {current_userid}'
+            ' ORDER BY created DESC'
+        ).fetchall()
+    else:
+        # 管理员可以看到所有的工单
+        posts = db.execute(
+            'SELECT p.id, title, body, created, author_id, username'
+            ' FROM post p JOIN user u ON p.author_id = u.id'
+            ' ORDER BY created DESC'
+        ).fetchall()
     return render_template('blog/index.html', posts=posts)
 
 

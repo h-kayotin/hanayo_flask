@@ -132,3 +132,8 @@ input[type=submit] {
   align-self: start;
   min-width: 10em;
 }
+
+input[type=button] {
+  align-self: start;
+  min-width: 10em;
+}

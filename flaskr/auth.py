@@ -170,6 +170,3 @@ def input_users():
       <input type=submit value=读取文件>
     </form>
     '''
-
-    # return "<p>导入用户成功</p><a href='/'>回到首页</a>"
-

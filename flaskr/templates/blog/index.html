@@ -6,10 +6,10 @@
     <a class="action" href="{{ url_for('blog.create') }}">新建</a>
   {% endif %}
   {% if is_admin %}
-    <a class="action" href="{{ url_for('blog.filter_display', status='new') }}">新的</a>
-    <a class="action" href="{{ url_for('blog.filter_display', status='ongoing') }}">进行中</a>
-    <a class="action" href="{{ url_for('blog.filter_display', status='closed') }}">已解决</a>
-    <a class="action" href="/">全部</a>
+    <a class="action" href="{{ url_for('blog.filter_display', status='new', page=1) }}">新的</a>
+    <a class="action" href="{{ url_for('blog.filter_display', status='ongoing', page=1) }}">进行中</a>
+    <a class="action" href="{{ url_for('blog.filter_display', status='closed', page=1) }}">已解决</a>
+    <a class="action" href="{{ url_for('blog.index') }}">全部</a>
   {% endif %}
 {% endblock %}
 
@@ -41,4 +41,29 @@
       <hr>
     {% endif %}
   {% endfor %}
+    <hr>
+    <a class="action" href="{{ url_for('blog.index') }}">回到主页</a>
+    {% if total_page > 1 and not key_word %}
+        {% if page_num>1 %}
+    <a class="action" href="{{ url_for('blog.pre_page', page=(page_num-1)) }}">上一页</a>
+        {% endif %}
+    <a class="action" href="{{ url_for('blog.filter_display', status='ongoing') }}">{{page_num}}</a>
+        {% if total_page > page_num %}
+    <a class="action" href="{{ url_for('blog.pre_page', page=(page_num+1)) }}">下一页</a>
+    <a class="action" href="{{ url_for('blog.pre_page', page=total_page) }}">最后一页({{total_page}})</a>
+        {% endif %}
+    {% endif %}
+
+    {% if total_page > 1 and key_word %}
+        {% if page_num>1 %}
+    <a class="action" href="{{ url_for('blog.pre_page_filter', page=1, status=key_word) }}">回到首页</a>
+    <a class="action" href="{{ url_for('blog.pre_page_filter', page=(page_num-1), status=key_word) }}">上一页</a>
+        {% endif %}
+    <a class="action" href="{{ url_for('blog.filter_display', status=key_word) }}">{{page_num}}</a>
+        {% if total_page > page_num %}
+    <a class="action" href="{{ url_for('blog.pre_page_filter', page=(page_num+1), status=key_word) }}">下一页</a>
+    <a class="action" href="{{ url_for('blog.pre_page_filter', page=total_page, status=key_word) }}">最后一页({{total_page}})</a>
+        {% endif %}
+    {% endif %}
+
 {% endblock %}

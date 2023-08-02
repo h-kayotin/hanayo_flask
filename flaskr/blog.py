@@ -13,6 +13,7 @@ from werkzeug.exceptions import abort
 from flaskr.auth import login_required
 from flaskr.db import get_db
 import datetime
+import math
 
 bp = Blueprint('blog', __name__)
 status_dict = {
@@ -22,28 +23,62 @@ status_dict = {
 }
 # 这里设置管理员的ID，只有管理员有编辑权限
 admins = {1, 2, 3}
+# 每页显示多少条
+PAGE_SIZE = 5
 
 
-@bp.route('/')
-@login_required  # 该装饰器表示该页面需要登录，否则就转到登录页
-def index():
-
-    db = get_db()
-    current_userid = session['user_id']
-    key_word = None
-    # 如果登录的不是管理员，那么就只显示登录用户提交的工单
+def get_pages_data(is_admin, user_id, db, start_num, page_size, status=None):
+    """
+    用sql语句从数据库获取数据
+    :param is_admin: 是否是管理员，布尔值
+    :param user_id: 当前登录用户id
+    :param db: 已连接的数据库对象
+    :param start_num: 从第几条数据开始
+    :param page_size: 每页显示多少条
+    :param status: 对于状态的筛选，默认不筛选
+    :return: 返回查询到的数据,和数据的总页数
+    """
+    # 这个sql语句用来获取要显示的一页数据
     sql_txt = """
         SELECT p.id, title, body, created, author_id, username, category, status, solution, owner, done
         FROM post p JOIN user u ON p.author_id = u.id
     """
-    if current_userid not in admins:
-        sql_txt += f' WHERE p.author_id = {current_userid}'
-        is_admin = False
-    else:
-        is_admin = True
+
+    # 这个sql用来统计总共有多少数据
+    sql_count = """
+        SELECT count(*) as total_num FROM post p JOIN user u ON p.author_id = u.id
+    """
+    if status and is_admin:
+        sql_txt += f"WHERE p.status = '{status}'"
+        sql_count += f"WHERE p.status = '{status}'"
+
+    if not is_admin:
+        sql_txt += f' WHERE p.author_id = {user_id}'
+        sql_count += f' WHERE p.author_id = {user_id}'
     sql_txt += ' ORDER BY created DESC'
+    sql_txt += f' limit {start_num},{page_size}'
     posts = db.execute(sql_txt).fetchall()
-    return render_template('blog/index.html', posts=posts, s_dict=status_dict, is_admin=is_admin, key=key_word)
+    pages = db.execute(sql_count).fetchone()["total_num"]
+    total_page_num = math.ceil(pages / page_size)
+    return posts, total_page_num
+
+
+@bp.route('/')
+@login_required  # 该装饰器表示该页面需要登录，否则就转到登录页
+def index(page=1, key_word=None):
+
+    key_word = key_word
+    # 定义从第几条开始
+    num_s = (page-1) * PAGE_SIZE
+
+    db = get_db()
+    current_userid = session['user_id']
+    is_admin = False
+    if current_userid in admins:
+        is_admin = True
+    posts, total_page = get_pages_data(is_admin, current_userid, db, num_s, PAGE_SIZE, key_word)
+    return render_template('blog/index.html', posts=posts, s_dict=status_dict,
+                           is_admin=is_admin, key_word=key_word, total_page=total_page, page_num=page)
 
 
 @bp.route('/create', methods=('GET', 'POST'))
@@ -179,18 +214,41 @@ def delete(id):
 
 @bp.route('/filter_display/<status>')
 @login_required
-def filter_display(status):
+def filter_display(status, page=0):
     db = get_db()
     is_admin = True
     current_userid = session['user_id']
     if current_userid not in admins:
         is_admin = False
     key_word = status
-    sql_txt = f"""
-        SELECT p.id, title, body, created, author_id, username, category, status, solution, owner, done
-        FROM post p JOIN user u ON p.author_id = u.id
-        WHERE p.status = "{key_word}"
-        ORDER BY created DESC
-    """
-    posts = db.execute(sql_txt).fetchall()
-    return render_template('blog/index.html', posts=posts, s_dict=status_dict, is_admin=is_admin, key=key_word)
+    posts, total_page = get_pages_data(is_admin, current_userid, db, page, PAGE_SIZE, status=status)
+    print(f"获取到了{len(posts)}条数据，共有{total_page}页")
+
+    return render_template('blog/index.html', posts=posts, s_dict=status_dict, is_admin=is_admin,
+                           key_word=key_word, total_page=total_page, page_num=1)
+
+
+@bp.route('/<page>')
+@login_required
+def pre_page(page):
+    """进行翻页"""
+    # for key, value in request.args.items():
+    #     print(f"参数{key}的值是{value}")
+    pre_page_num = int(page)
+    if pre_page_num > 0:
+        return index(page=pre_page_num)
+    else:
+        return index()
+
+
+@bp.route('/<page>/<status>')
+@login_required
+def pre_page_filter(page, status):
+    """对于筛选后的结果进行翻页"""
+    pre_page_num = int(page)
+    print(f"当前页码是{page}，筛选项目是{status}")
+    if pre_page_num > 0:
+        return index(page=pre_page_num, key_word=status)
+    else:
+        return index(key_word=status)
+

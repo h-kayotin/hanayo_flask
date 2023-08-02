@@ -13,6 +13,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 import csv
 from flaskr.db import get_db
+from blog import admins
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -22,7 +23,7 @@ def register():
     # # 以下代码确保注册页只有管理员能访问
     # try:
     #     current_userid = session['user_id']
-    #     if not current_userid == 1:
+    #     if current_userid not in admins:
     #         return redirect(url_for('blog.index'))
     # except KeyError:
     #     return redirect(url_for('auth.login'))
@@ -66,9 +67,9 @@ def login():
         ).fetchone()
 
         if user is None:
-            error = 'Incorrect username.'
+            error = '用户名错误'
         elif not check_password_hash(user['password'], password):
-            error = 'Incorrect password.'
+            error = '密码错误'
 
         if error is None:
             session.clear()
@@ -124,7 +125,7 @@ def input_users():
     # 以下代码确保注册页只有管理员能访问
     try:
         current_userid = session['user_id']
-        if not current_userid == 1:
+        if current_userid not in admins:
             return redirect(url_for('blog.index'))
     except KeyError:
         return redirect(url_for('auth.login'))

@@ -1,5 +1,5 @@
 """
-auth - 
+auth - 负责登录注册
 
 Author: hanayo
 Date： 2023/7/28
@@ -12,8 +12,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 import csv
-from flaskr.db import get_db
-from blog import admins
+from flaskr.db import get_db, admins
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 

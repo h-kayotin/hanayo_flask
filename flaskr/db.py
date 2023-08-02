@@ -10,6 +10,9 @@ import sqlite3
 import click
 from flask import current_app, g
 
+# 这个值用来判断是否是管理员
+admins = {1, 2, 3}
+
 
 def get_db():
     if 'db' not in g:

@@ -1,5 +1,5 @@
 """
-__init__.py - 
+__init__.py - 应用的初始化
 
 Author: hanayo
 Date： 2023/7/28
@@ -7,6 +7,7 @@ Date： 2023/7/28
 import os
 
 from flask import Flask
+from flask import send_from_directory
 
 
 def create_app(test_config=None):
@@ -34,6 +35,11 @@ def create_app(test_config=None):
     @app.route('/hello')
     def hello():
         return 'Hello, World!'
+
+    @app.route('/favicon.ico')
+    def favicon():
+        return send_from_directory(os.path.join(app.root_path, 'static'),
+                                   'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
     from . import db
     db.init_app(app)

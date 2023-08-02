@@ -1,5 +1,5 @@
 """
-blog - 
+blog - 工单展示和编辑
 
 Author: hanayo
 Date： 2023/7/28
@@ -11,7 +11,7 @@ from flask import (
 from werkzeug.exceptions import abort
 
 from flaskr.auth import login_required
-from flaskr.db import get_db
+from flaskr.db import get_db, admins
 import datetime
 import math
 
@@ -21,8 +21,6 @@ status_dict = {
     "ongoing": "进行中",
     "closed": "已解决"
 }
-# 这里设置管理员的ID，只有管理员有编辑权限
-admins = {1, 2, 3}
 # 每页显示多少条
 PAGE_SIZE = 5
 

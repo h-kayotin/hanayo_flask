@@ -29,7 +29,7 @@
           {% endif %}
         </div>
         {% if is_admin%}
-          <a class="action" href="{{ url_for('blog.update', id=post['id'], key=key) }}">编辑</a>
+          <a class="action" href="{{ url_for('blog.update', id=post['id'], key=key_word) }}">编辑</a>
         {% endif %}
       </header>
       <p class="body">问题描述：{{ post['body'] }}</p>

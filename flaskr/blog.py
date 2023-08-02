@@ -112,7 +112,7 @@ def create():
 
 def get_post(id, check_author=True):
     post = get_db().execute(
-        'SELECT p.id, title, body, created, author_id, username,status, solution, owner'
+        'SELECT p.id, title, body, created, author_id, username, status, solution, owner, category'
         ' FROM post p JOIN user u ON p.author_id = u.id'
         ' WHERE p.id = ?',
         (id,)
@@ -159,10 +159,19 @@ def update(id):
         {"value": "liushengwu", "text": "陈san", "selected": False},
         {"value": "chenhaomin", "text": "刘san", "selected": False},
     ]
+    # 下面这个列表是用来显示编辑页面的工单类别
+    types_list = [
+        {"value": "outlook", "text": "邮箱", "selected": False},
+        {"value": "PC", "text": "PC", "selected": False},
+        {"value": "card", "text": "门禁卡", "selected": False},
+        {"value": "other", "text": "其他", "selected": False}
+    ]
     make_options(drop_down, post["status"])
     make_options(admins_list, post["owner"])
+    make_options(types_list, post["category"])
     if request.method == 'POST':
         title = request.form['title']
+        category = request.form.get('category')
         body = request.form['body']
         status = request.form.get('status')
         solution = request.form['solution']
@@ -177,6 +186,9 @@ def update(id):
         if status == "new" and owner is not None:
             status = "ongoing"
 
+        if status == "new" and owner is None:
+            error = '错误：请选择一个负责人'
+
         if not title:
             error = '标题不能为空'
 
@@ -185,7 +197,7 @@ def update(id):
         else:
             sql_text = f"""
                 UPDATE post SET title = "{title}", body = "{body}", status = "{status}",
-                solution = "{solution}", owner = "{owner}"
+                solution = "{solution}", owner = "{owner}", category = "{category}"
             """
             if done:
                 sql_text += f", done = '{done}'"
@@ -199,7 +211,8 @@ def update(id):
             else:
                 return redirect(url_for('blog.index'))
 
-    return render_template('blog/update.html', post=post, drop_down=drop_down, admins=admins_list)
+    return render_template('blog/update.html', post=post, drop_down=drop_down, admins=admins_list,
+                           types_list=types_list)
 
 
 @bp.route('/<int:id>/delete', methods=('POST',))
@@ -222,7 +235,7 @@ def filter_display(status, page=0):
         is_admin = False
     key_word = status
     posts, total_page = get_pages_data(is_admin, current_userid, db, page, PAGE_SIZE, status=status)
-    print(f"获取到了{len(posts)}条数据，共有{total_page}页")
+    # print(f"获取到了{len(posts)}条数据，共有{total_page}页")
 
     return render_template('blog/index.html', posts=posts, s_dict=status_dict, is_admin=is_admin,
                            key_word=key_word, total_page=total_page, page_num=1)
@@ -232,8 +245,6 @@ def filter_display(status, page=0):
 @login_required
 def pre_page(page):
     """进行翻页"""
-    # for key, value in request.args.items():
-    #     print(f"参数{key}的值是{value}")
     pre_page_num = int(page)
     if pre_page_num > 0:
         return index(page=pre_page_num)
@@ -246,7 +257,7 @@ def pre_page(page):
 def pre_page_filter(page, status):
     """对于筛选后的结果进行翻页"""
     pre_page_num = int(page)
-    print(f"当前页码是{page}，筛选项目是{status}")
+    # print(f"当前页码是{page}，筛选项目是{status}")
     if pre_page_num > 0:
         return index(page=pre_page_num, key_word=status)
     else:

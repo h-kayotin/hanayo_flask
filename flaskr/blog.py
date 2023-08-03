@@ -142,8 +142,18 @@ def update(id):
     # print("来源url是", request.url)
     try:
         key_word = request.args["key"]
+        my_page_num = int(request.args["page"])
     except KeyError:
         key_word = None
+        my_page_num = 0
+    try:
+        is_my_filter = request.args["filter"]
+    except KeyError:
+        is_my_filter = None
+    try:
+        my_page_num = int(request.args["page"])
+    except KeyError:
+        my_page_num = 0
     post = get_post(id)
     # 以下两个列表用来生成编辑页面的下拉菜单
     drop_down = [
@@ -167,6 +177,7 @@ def update(id):
     make_options(drop_down, post["status"])
     make_options(admins_list, post["owner"])
     make_options(types_list, post["category"])
+
     if request.method == 'POST':
         title = request.form['title']
         category = request.form.get('category')
@@ -205,7 +216,12 @@ def update(id):
             db.execute(sql_text)
             db.commit()
             if key_word:
-                return redirect(url_for('blog.filter_display', status=key_word))
+                return index(page=my_page_num, key_word=status)
+                # return redirect(url_for('blog.filter_display', status=key_word, page=my_page_num))
+            elif is_my_filter:
+                return redirect(url_for('blog.filter_my', owner=session['user_id']))
+            elif my_page_num > 1:
+                return index(page=my_page_num, key_word=None)
             else:
                 return redirect(url_for('blog.index'))
 
@@ -233,7 +249,6 @@ def filter_display(status, page=0):
         is_admin = False
     key_word = status
     posts, total_page = get_pages_data(is_admin, current_userid, db, page, PAGE_SIZE, status=status)
-    # print(f"获取到了{len(posts)}条数据，共有{total_page}页")
 
     return render_template('blog/index.html', posts=posts, s_dict=status_dict, is_admin=is_admin,
                            key_word=key_word, total_page=total_page, page_num=1)
@@ -261,3 +276,21 @@ def pre_page_filter(page, status):
     else:
         return index(key_word=status)
 
+
+@bp.route('/my/<owner>')
+@login_required
+def filter_my(owner, page=0):
+    admin_id = int(owner)
+    sql_txt = f"""
+        SELECT p.id, title, body, created, author_id, username, category, status, solution, owner, done
+        FROM post p JOIN user u ON p.author_id = u.id
+        WHERE p.owner = (SELECT username FROM user
+        WHERE id = {admin_id}) and status = "ongoing"
+        ORDER BY created DESC
+    """
+    db = get_db()
+    posts = db.execute(sql_txt).fetchall()
+    total_page = 0
+    return render_template('blog/index.html', posts=posts, s_dict=status_dict,
+                           is_admin=True, key_word=None, total_page=total_page, page_num=page,
+                           filter="my")

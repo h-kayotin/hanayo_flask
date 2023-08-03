@@ -35,15 +35,9 @@
     <textarea name="solution" id="solution">请填写解决方案</textarea>
     <input type="submit" value="保存">
   </form>
-  <script>
-    status = document.getElementById("status").options;
-    for(i=0;i<status.length;i++){
-        if (status[i].value == "{{post['status']}}"){
-        status[i].selected = true;
-        }
-    }
-  </script>
-  <hr>
+
+    <input type="submit" value="取消" onclick="javascript:history.back(-1);">
+ <hr>
   <form action="{{ url_for('blog.delete', id=post['id']) }}" method="post">
     <input class="danger" type="submit" value="删除" onclick="return confirm('确定要删除吗?');">
   </form>

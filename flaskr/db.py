@@ -11,7 +11,7 @@ import click
 from flask import current_app, g
 
 # 这个值用来判断是否是管理员
-admins = {1, 2, 3}
+admins = {1, 2, 3, 4, 5}
 
 
 def get_db():

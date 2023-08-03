@@ -9,7 +9,7 @@
     <a class="action" href="{{ url_for('blog.filter_display', status='new', page=1) }}">新的</a>
     <a class="action" href="{{ url_for('blog.filter_display', status='ongoing', page=1) }}">进行中</a>
     <a class="action" href="{{ url_for('blog.filter_display', status='closed', page=1) }}">已解决</a>
-    <a class="action" href="{{ url_for('blog.index') }}">全部</a>
+    <a class="action" href="{{ url_for('blog.filter_my', owner=session['user_id']) }}">我的工单</a>
   {% endif %}
 {% endblock %}
 
@@ -29,7 +29,7 @@
           {% endif %}
         </div>
         {% if is_admin%}
-          <a class="action" href="{{ url_for('blog.update', id=post['id'], key=key_word) }}">编辑</a>
+          <a class="action" href="{{ url_for('blog.update', id=post['id'], key=key_word, filter=filter,page=page_num) }}">编辑</a>
         {% endif %}
       </header>
       <p class="body">问题描述：{{ post['body'] }}</p>
